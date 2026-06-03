@@ -11,41 +11,55 @@ Atender ao cenário de uma imobiliária/corretora com autenticação JWT e regra
 - .NET 9 (ASP.NET Core Web API)
 - Entity Framework Core
 - SQL Server
-- Docker / Docker Compose
+- Docker
 - Swagger / OpenAPI
 - JWT Bearer Authentication
+
+## Estrutura do projeto
+
+Api/
+├── Application/        # Casos de uso / serviços
+├── Domain/             # Entidades e regras de negócio
+├── Infrastructure/     # EF Core, Repositórios, DB
+├── RealEstate/         # API (Controllers, Program.cs)
+└── Tests/              # Testes automatizados
+
+A API principal está localizada em:
+
+Api/RealEstate
+
+## Responsabilidade das camadas
+
+- Domain → regras de negócio puras
+- Application → orquestração de casos de uso
+- Infrastructure → persistência e integrações
+- RealEstate → API e exposição HTTP
 
 ---
 
 ## Como executar o projeto
 
-## Pré-requisitos
-- .NET SDK 9
-- SQL Server Express (local) **ou** Docker
-- Docker Desktop (opcional, para execução containerizada)
+> Todo o ambiente (SQL Server + API) é executado via Docker.
 
-## Opção 1: Executar localmente (com SQL Server Express)
-
-> Se você não tiver SQL Server local instalado, pode subir **somente o banco** via Docker:
+1. Subir o SQL Server
 
 ```powershell
-docker compose up -d sqlserver
+docker rm -f sqlserver
+
+docker run -e "ACCEPT_EULA=Y" ^
+-e "MSSQL_SA_PASSWORD=Senha@123456" ^
+-p 1433:1433 ^
+--name sqlserver ^
+-d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-Para verificar se o banco está no ar:
+2. Verificar se o SQL está ativo
 
 ```powershell
-docker compose ps
+docker ps
 ```
 
-Para parar/remover apenas o container do banco:
-
-```powershell
-docker compose stop sqlserver
-docker compose rm -f sqlserver
-```
-
-1. Ajuste a connection string em `RealEstate/appsettings.Development.json`:
+3. Ajuste a connection string em `Api/RealEstate/appsettings.Development.json`:
 
 ```json
 "ConnectionStrings": {
@@ -53,32 +67,21 @@ docker compose rm -f sqlserver
 }
 ```
 
-2. Aplicar migrations:
+4. Aplicar migrations Executar as migrations para criar o banco e tabelas.:
 
 ```powershell
-dotnet ef database update --project Infrastructure/Infrastructure.csproj --startup-project RealEstate/RealEstate.Api.csproj
+dotnet ef database update --project Api/Infrastructure/Infrastructure.csproj --startup-project Api/RealEstate/RealEstate.Api.csproj
 ```
 
-3. Executar API:
+5. Executar API:
 
 ```powershell
-dotnet run --project RealEstate/RealEstate.Api.csproj
+dotnet run --project Api/RealEstate/RealEstate.Api.csproj
 ```
 
-4. Abrir Swagger:
-- `https://localhost:7291/swagger` (ou URL/porta do perfil ativo)
-
-## Opção 2: Executar com Docker (API + SQL Server)
-
-```powershell
-docker-compose up --build
-```
-
-Swagger:
+6. Abrir Swagger:
 - `https://localhost:8081/swagger`
 - `http://localhost:8080/swagger`
-
----
 
 ## Estrutura das tabelas
 Estrutura baseada na migration inicial em `Infrastructure/Migrations/20260603161843_InitialCreate.cs`.
@@ -174,7 +177,7 @@ Body:
 
 ## Como gerar e usar o JWT
 
-As configurações estão em `RealEstate/appsettings.json`:
+As configurações estão em `Api/RealEstate/appsettings.json`:
 - `Jwt:Issuer`
 - `Jwt:Audience`
 - `Jwt:SecretKey`
