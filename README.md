@@ -17,12 +17,12 @@ Atender ao cenário de uma imobiliária/corretora com autenticação JWT e regra
 
 ## Estrutura do projeto
 
-Api/
-├── Application/        # Casos de uso / serviços
-├── Domain/             # Entidades e regras de negócio
-├── Infrastructure/     # EF Core, Repositórios, DB
-├── RealEstate/         # API (Controllers, Program.cs)
-└── Tests/              # Testes automatizados
+- Api/
+- Application/        # Casos de uso / serviços
+- Domain/             # Entidades e regras de negócio
+- Infrastructure/     # EF Core, Repositórios, DB
+- RealEstate/         # API (Controllers, Program.cs)
+- Tests/              # Testes automatizados
 
 A API principal está localizada em:
 
