@@ -12,6 +12,8 @@ export const useRetryableQuery = <TData,>({
   return useQuery<TData, Error>({
     queryKey,
     queryFn,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (error.message.toLowerCase().includes("unauthorized")) {
         return false;

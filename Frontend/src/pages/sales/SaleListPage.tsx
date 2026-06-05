@@ -14,6 +14,8 @@ import { useTableState } from "@/hooks/useTableState";
 import { saleService } from "@/services/saleService";
 import type { Sale } from "@/types/entities";
 import { currencyFormatter, parseApiDate } from "@/utils/formatters";
+import { customerService } from "@/services/customerService";
+import { apartmentService } from "@/services/apartmentService";
 
 export const SaleListPage = () => {
   const queryClient = useQueryClient();
@@ -26,6 +28,8 @@ export const SaleListPage = () => {
   });
 
   const source = useMemo(() => salesQuery.data ?? [], [salesQuery.data]);
+
+
 
   const { paginated, setPage, sortState, setSortState } = useTableState<Sale>({
     source,
@@ -112,6 +116,23 @@ const SaleCreateInline = ({ onCreated }: { onCreated: () => Promise<unknown> }) 
     }
   });
 
+  const customersQuery = useRetryableQuery({
+    queryKey: ["clientes"],
+    queryFn: customerService.list
+  });
+
+  const apartmentsQuery = useRetryableQuery({
+    queryKey: ["apartamentos"],
+    queryFn: apartmentService.list
+  });
+
+  const reservedApartaments = useMemo(
+    () => (apartmentsQuery.data ?? []).filter((apartamento) => apartamento.status === 2),
+    [apartmentsQuery.data]
+  );
+
+
+
   return (
     <form
       className="grid gap-3 rounded-2xl border border-ink-900/10 bg-white p-4 md:grid-cols-[1fr_1fr_180px_auto]"
@@ -120,18 +141,58 @@ const SaleCreateInline = ({ onCreated }: { onCreated: () => Promise<unknown> }) 
         createMutation.mutate();
       }}
     >
-      <InputText placeholder="Cliente ID (GUID)" value={clienteId} onChange={(event) => setClienteId(event.target.value)} required />
-      <InputText
-        placeholder="Apartamento ID (GUID)"
-        value={apartamentoId}
-        onChange={(event) => setApartamentoId(event.target.value)}
+      <select value={clienteId}
+        onChange={(event) => setClienteId(event.target.value)}
         required
-      />
+        className="rounded-lg border border-ink-900/20 px-3 py-2">
+        <option value="" disabled>Selecione um cliente</option>
+        {customersQuery.data?.map(cliente => (
+          <option key={cliente.id} value={cliente.id}>{cliente.nome}</option>
+        ))}
+      </select>
+      <select
+        value={apartamentoId}
+        onChange={(event) => {
+          const selectedApartmentId = event.target.value;
+
+          setApartamentoId(selectedApartmentId);
+
+          const apartment = reservedApartaments.find(
+            apartment => apartment.id === selectedApartmentId
+          );
+
+          if (apartment) {
+            setValorVenda(apartment.valor);
+          } else {
+            setValorVenda(0);
+          }
+        }}
+        required
+        className="rounded-lg border border-ink-900/20 px-3 py-2"
+      >
+        {reservedApartaments.length === 0 ? (
+          <option value="">Nenhum apartamento reservado</option>
+        ) : (
+          <>
+            <option value="">Selecione um apartamento</option>
+
+            {reservedApartaments.map((apartment) => (
+              <option
+                key={apartment.id}
+                value={apartment.id}
+              >
+                Apto {apartment.numero} | Bloco {apartment.bloco} | Andar {apartment.andar} | Valor: {apartment.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </option>
+            ))}
+          </>
+        )}
+      </select>
       <InputNumber
         placeholder="Valor da venda"
         min={0}
         step="0.01"
         value={valorVenda}
+        type="text"
         onChange={(event) => setValorVenda(Number(event.target.value))}
         required
       />

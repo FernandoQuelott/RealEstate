@@ -83,6 +83,56 @@ dotnet run --project Api/RealEstate/RealEstate.Api.csproj
 - `https://localhost:8081/swagger`
 - `http://localhost:8080/swagger`
 
+## Como executar o Frontend
+
+> O frontend React (Vite + TypeScript) está na pasta `Frontend/` e consome a API em `VITE_API_URL`.
+
+1. Pré-requisitos
+- Node.js 20+ (recomendado)
+- npm 10+
+
+2. Garanta que a API já esteja rodando
+- Siga os passos da seção **Como executar o projeto**.
+- A API deve estar acessível em `http://localhost:8080` (ou `https://localhost:8081`).
+
+3. Acesse a pasta do frontend
+
+```powershell
+cd Frontend
+```
+
+4. Instale as dependências
+
+```powershell
+npm install
+```
+
+5. Configure a URL da API
+
+Crie o arquivo `.env` na pasta `Frontend/` com:
+
+```env
+VITE_API_URL=http://localhost:8080
+```
+
+Se preferir HTTPS, use `https://localhost:8081`.
+
+6. Execute em modo desenvolvimento
+
+```powershell
+npm run dev
+```
+
+7. Abra no navegador
+- `http://localhost:5173`
+
+8. Build de produção (opcional)
+
+```powershell
+npm run build
+npm run preview
+```
+
 ## Estrutura das tabelas
 Estrutura baseada na migration inicial em `Infrastructure/Migrations/20260603161843_InitialCreate.cs`.
 

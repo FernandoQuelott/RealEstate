@@ -14,6 +14,8 @@ import { useTableState } from "@/hooks/useTableState";
 import { reservationService } from "@/services/reservationService";
 import { ReservationStatus, type Reservation } from "@/types/entities";
 import { parseApiDate, reservationStatusLabel } from "@/utils/formatters";
+import { customerService } from "@/services/customerService";
+import { apartmentService } from "@/services/apartmentService";
 
 export const ReservationListPage = () => {
   const queryClient = useQueryClient();
@@ -166,6 +168,24 @@ const ReservationCreateInline = () => {
     }
   });
 
+  const customersQuery = useRetryableQuery({
+    queryKey: ["clientes"],
+    queryFn: customerService.list
+  });
+
+  const apartmentsQuery = useRetryableQuery({
+    queryKey: ["apartamentos"],
+    queryFn: apartmentService.list
+  });
+
+  const availableApartments = useMemo(
+    () =>
+      (apartmentsQuery.data ?? []).filter(
+        (apartment) => apartment.status === 1
+      ),
+    [apartmentsQuery.data]
+  );
+
   return (
     <form
       className="grid gap-3 rounded-2xl border border-ink-900/10 bg-white p-4 md:grid-cols-[1fr_1fr_auto]"
@@ -174,13 +194,47 @@ const ReservationCreateInline = () => {
         createMutation.mutate();
       }}
     >
-      <InputText placeholder="Cliente ID (GUID)" value={clienteId} onChange={(event) => setClienteId(event.target.value)} required />
-      <InputText
-        placeholder="Apartamento ID (GUID)"
+      <select
+        value={clienteId}
+        onChange={(event) => setClienteId(event.target.value)}
+        required
+        className="w-full rounded-xl border border-ink-900/15 bg-white px-3 py-2 text-sm"
+      >
+        <option value="">Selecione um cliente</option>
+
+        {customersQuery.data?.map((customer) => (
+          <option
+            key={customer.id}
+            value={customer.id}
+          >
+            {customer.nome}
+          </option>
+        ))}
+      </select>
+      <select
         value={apartamentoId}
         onChange={(event) => setApartamentoId(event.target.value)}
         required
-      />
+        disabled={!availableApartments.length}
+        className="w-full rounded-xl border border-ink-900/15 bg-white px-3 py-2 text-sm"
+      >
+        {availableApartments.length === 0 ? (
+          <option value="">Nenhum apartamento disponível</option>
+        ) : (
+          <>
+            <option value="">Selecione um apartamento</option>
+
+            {availableApartments.map((apartment) => (
+              <option
+                key={apartment.id}
+                value={apartment.id}
+              >
+                Apto {apartment.numero} | Bloco {apartment.bloco} | Andar {apartment.andar} | Valor: {apartment.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </option>
+            ))}
+          </>
+        )}
+      </select>
       <Button type="submit" disabled={createMutation.isPending}>
         {createMutation.isPending ? "Reservando..." : "Nova reserva"}
       </Button>
